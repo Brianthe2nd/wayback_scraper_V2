@@ -56,11 +56,13 @@ When you launch the script, it will guide you through the following steps:
 
 ## 📂 Output Structure
 
+<pre>
 {username}/
 ├── archives/                    # Stores the downloaded archive files
 ├── logs/                        # Contains timestamped process logs
 │   └── {YYYYMMDD_HHMMSS}_{username}_process.log
 └── {username}_captures.json     # A JSON list of all captures from the Wayback Machine
+</pre>
 
 The script organizes all generated files into a folder named after the Twitter handle:
 
