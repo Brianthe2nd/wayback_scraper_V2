@@ -318,7 +318,7 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
         data = json.load(f)
 
     # Decide loop iterator
-    iterator = tqdm(data[1], desc="Processing") if show_tqdm else data[1]
+    iterator = tqdm(data[1:], desc="Processing") if show_tqdm else data[1:]
 
     # Skip header row
     for row in iterator:
