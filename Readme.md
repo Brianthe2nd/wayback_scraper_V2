@@ -1,4 +1,3 @@
-Of course\! Here is a professionally edited and formatted version of your `README.md` content, ready for GitHub. The entire content is enclosed in a single code block for easy copying and pasting.
 
 ````markdown
 # Twitter Wayback Capture Downloader 🕊️
