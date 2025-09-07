@@ -360,6 +360,8 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
 
                 with open(os.path.join(project_dir, "error_tweets.txt"), "w", encoding="utf-8") as f:
                     f.write("\n".join(error_tweets))
+    
+    print("\n")
 
 
 # Example usage
