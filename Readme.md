@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+
+````markdown
+>>>>>>> b1d0c7fc961391445b5143564936a0b7e0752543
 # Twitter Wayback Capture Downloader 🕊️
 
 A Python script to find and download historical captures of a Twitter profile from the [Internet Archive's Wayback Machine](https://web.archive.org/).
@@ -93,8 +98,13 @@ Processing archives...
 
 ✅ Process complete.
 
+<<<<<<< HEAD
 
 
 
 
 
+=======
+```
+```
+>>>>>>> b1d0c7fc961391445b5143564936a0b7e0752543
