@@ -102,7 +102,7 @@ def get_links():
                 with open(output_file, "r", encoding="utf-8") as f:
                     rows = json.load(f)
                 print(f"📂 Loaded {len(rows)} entries from {output_file}")
-                return rows
+                return output_file,username
             except FileNotFoundError:
                 print("⚠️ No saved data found. Please fetch data first.")
                 continue

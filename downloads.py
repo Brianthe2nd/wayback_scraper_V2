@@ -14,6 +14,7 @@ from openpyxl.utils import get_column_letter
 from parse_html import parse_html
 from parse_json import parse_tweet_json
 from sec_downloads import fetch_html_after_delay
+from pathlib import Path
 
 def secondary_download(url,timestamp,project_dir):
     try:
@@ -31,19 +32,19 @@ def secondary_download(url,timestamp,project_dir):
                 tweet_json = json.loads(content)
                 tweet = parse_tweet_json(tweet_json, timestamp)
                 print(tweet)
-                update_xlsx(tweet)
+                update_xlsx(project_dir=project_dir,tweet=tweet)
                 
             else:
                 tweet = parse_html(soup, link, True)
                 print(tweet)
-                update_xlsx(tweet)
+                update_xlsx(project_dir=project_dir,tweet=tweet)
 
                 
         else:
             tweet_json = json.loads(content)
             tweet = parse_tweet_json(tweet_json, timestamp)
             print(tweet)
-            update_xlsx(tweet)
+            update_xlsx(project_dir=project_dir,tweet=tweet)
         return True
     except Exception as e:
         print(f"Error processing row: {e}")
@@ -196,13 +197,23 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
     # Temporary folder for downloader
 
     tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
+    
 
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir)  # clean old runs
     os.makedirs(tmp_dir, exist_ok=True)
 
     # Run wayback_machine_downloader
-    cmd = f'ruby wayback_machine_downloader "{url}" -e -d "{tmp_dir}"'
+    # safe_tmp_dir = Path(tmp_dir).as_posix()  # forward slashes, Ruby-friendly
+
+    cmd = [
+        "ruby",
+        "wayback_machine_downloader",
+        url,
+        "-e",
+        "-d",
+        f"../../{user_name}/archives/tmp_dl"
+    ]
     print(f"Running: {cmd}")
     cwd = "wayback-machine-downloader/bin"
 
@@ -221,7 +232,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
         if "No files to download." in output:
             print("⚠️ No files to download. The site may not be in Wayback Machine.")
             print("Trying secondary download ...")
-            download_successful=secondary_download()
+            download_successful=secondary_download(url=url,timestamp=timestamp,project_dir=project_dir)
             shutil.rmtree(tmp_dir, ignore_errors=True)
             if download_successful:
                 print("Secondary download completed successfully.")
@@ -239,11 +250,11 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
 
 
     # Find the downloaded file (index.html or index.json)
-    open_temp_dir = tmp_dir + f"/{user_name}/status"
+    open_temp_dir = os.path.join(tmp_dir,user_name,"status")
     files = os.listdir(open_temp_dir)
     file = files[0]
-    index_path = f"{open_temp_dir}/{file}/index{ext}"
-
+    index_file = os.listdir(f"{open_temp_dir}/{file}")[0]
+    index_path = os.path.join(open_temp_dir,file,index_file)
     with open(index_path, encoding="utf-8") as f:
         data = f.read()
 
@@ -272,23 +283,23 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
                 tweet_json = json.loads(text_content)
                 tweet = parse_tweet_json(tweet_json, timestamp)
                 print(tweet)
-                update_xlsx(tweet)
+                update_xlsx(project_dir=project_dir,tweet=tweet)
                 
             else:
                 tweet = parse_html(soup, link, True)
                 print(tweet)
-                update_xlsx(tweet)
+                update_xlsx(project_dir=project_dir,tweet=tweet)
                 
         else:
             tweet_json = json.loads(data)
             tweet = parse_tweet_json(tweet_json, timestamp)
             print(tweet)
-            update_xlsx(tweet)
+            update_xlsx(project_dir=project_dir,tweet=tweet)
 
     else:
         soup = BeautifulSoup(data, "html.parser")
         tweet = parse_html(soup, file_name)
-        update_xlsx(tweet)
+        update_xlsx(project_dir=project_dir,tweet=tweet)
     return True
 
 
@@ -307,7 +318,7 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
         data = json.load(f)
 
     # Decide loop iterator
-    iterator = tqdm(data[1:], desc="Processing") if show_tqdm else data[1:]
+    iterator = tqdm(data[1], desc="Processing") if show_tqdm else data[1]
 
     # Skip header row
     for row in iterator:
