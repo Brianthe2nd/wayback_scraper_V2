@@ -36,7 +36,7 @@ def secondary_download(url,timestamp,project_dir,output_dir):
             if pre_tag:
                 text_content = pre_tag.get_text(strip=True)
                 # print(text_content)  # 👉 {"hello": "world"}
-                tweet_json = json.loads(content)
+                tweet_json = json.loads(text_content)
                 tweet = parse_tweet_json(tweet_json, timestamp)
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
