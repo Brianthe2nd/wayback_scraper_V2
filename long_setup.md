@@ -36,7 +36,7 @@ These steps only need to be done **once**.
 ## 3. Install Python Packages
 Navigate into the downloaded folder using `cd` (replace with your folder path).Default path if you installed in Downloads will be:  
 ```bash
-cd Downloads/wayback_scraper
+cd Downloads/wayback_scraper_V2
 ```
 
 Then install the requirements:
@@ -46,6 +46,8 @@ Then install the requirements:
 pip install -r requirements.txt
 ```
 ## 4. Install git
+- Install [Git](https://git-scm.com/downloads)
+or run in CMD:
 ```bash
 winget install --id Git.Git -e --source winget
 ```
