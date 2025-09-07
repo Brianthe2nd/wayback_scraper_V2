@@ -1,6 +1,3 @@
-Of course\! Here is a professionally edited and formatted version of your `README.md` content, ready for GitHub. The entire content is enclosed in a single code block for easy copying and pasting.
-
-````markdown
 # Twitter Wayback Capture Downloader 🕊️
 
 A Python script to find and download historical captures of a Twitter profile from the [Internet Archive's Wayback Machine](https://web.archive.org/).
@@ -60,17 +57,13 @@ When you launch the script, it will guide you through the following steps:
 
 ## 📂 Output Structure
 
-The script organizes all generated files into a folder named after the Twitter handle:
-
-````
-
 {username}/
-├── archives/                    \# Stores the downloaded archive files
-├── logs/                        \# Contains timestamped process logs
-│   └── {YYYYMMDD\_HHMMSS}\_{username}\_process.log
-└── {username}\_captures.json     \# A JSON list of all captures from the Wayback Machine
+├── archives/                    # Stores the downloaded archive files
+├── logs/                        # Contains timestamped process logs
+│   └── {YYYYMMDD_HHMMSS}_{username}_process.log
+└── {username}_captures.json     # A JSON list of all captures from the Wayback Machine
 
-````
+The script organizes all generated files into a folder named after the Twitter handle:
 
 The `{username}_captures.json` file contains metadata for each snapshot, including fields like `original`, `mimetype`, `timestamp`, and `uniqcount`.
 
@@ -83,23 +76,25 @@ Here’s what a typical session looks like:
 ```bash
 $ python main.py
 
-Enter the username (Twitter handle): exampleuser
-⚠️ File 'exampleuser/exampleuser_captures.json' already exists.
+Enter the username (Twitter handle): Nekrovevo
+⚠️ File 'Nekrovevo/Nekrovevo_captures.json' already exists.
 Do you want to (O)verwrite, (S)kip, or (A)ppend new data into it? [O/S/A]: A
 Enter start date (YYYYMM): 202001
 Enter end date (YYYYMM): 202012
 
-Generated URL for (@exampleuser):
-[https://web.archive.org/web/timemap/json?url=twitter.com/exampleuser&from=202001&to=202012&matchType=prefix&output=json](https://web.archive.org/web/timemap/json?url=twitter.com/exampleuser&from=202001&to=202012&matchType=prefix&output=json)
+Generated URL for (@Nekrovevo):
+[https://web.archive.org/web/timemap/json?url=twitter.com/Nekrovevo&from=202001&to=202012&matchType=prefix&output=json](https://web.archive.org/web/timemap/json?url=twitter.com/Nekrovevo&from=202001&to=202012&matchType=prefix&output=json)
 
 Show progress bar instead of logs [y/n]: y
-📜 Logs saved to exampleuser/logs/20250907_163544_exampleuser_process.log
+📜 Logs saved to Nekrovevo/logs/20250907_163544_Nekrovevo_process.log
 
 Processing archives...
 100%|█████████████████████████████████| 152/152 [01:12<00:00, 2.11it/s]
 
 ✅ Process complete.
-````
 
-```
-```
+
+
+
+
+
