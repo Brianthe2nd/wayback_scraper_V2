@@ -23,7 +23,7 @@ Open a command-line interface. On Windows, **Git Bash** is highly recommended as
 Run the following command to download the project files and navigate into the newly created directory:
 
 ```bash
-git clone [https://github.com/Brianthe2nd/wayback_scraper_V2.git](https://github.com/Brianthe2nd/wayback_scraper_V2.git)
+git clone https://github.com/Brianthe2nd/wayback_scraper_V2.git
 cd wayback_scraper_V2
 ```
 
