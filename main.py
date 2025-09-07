@@ -2,6 +2,7 @@ from links import get_links
 from downloads import process_json_file
 import os
 import sys
+import datetime
 
 class Tee:
     def __init__(self, *files):
@@ -26,10 +27,8 @@ if __name__ == "__main__":
     if not os.path.exists(logs_folder):
         os.makedirs(logs_folder)
 
-    log_file = os.path.join(logs_folder,f"{username}_process.log")
+    log_file = os.path.join(logs_folder,f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{username}_process.log")
     if show_tqdm == "y":
-
-
         with open(log_file, "w", encoding="utf-8") as f:
             # Redirect stdout and stderr to the log file
             original_stdout = sys.stdout
