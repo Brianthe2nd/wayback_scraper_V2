@@ -2,7 +2,7 @@ from links import get_links
 from downloads import process_json_file
 import os
 import sys
-import datetime
+from datetime import datetime
 
 class Tee:
     def __init__(self, *files):
