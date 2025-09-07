@@ -26,6 +26,15 @@ headers = {
   'Cookie': 'wb-p-SERVER=wwwb-app224; wb-cdx-SERVER=wwwb-app208; donation-identifier=bea4320a4776fb2c84a3999cc69ec714; wb-cdx-ui-SERVER=wwwb-app205; view-search=tiles; showdetails-search=; abtest-identifier=aa344537511d7d4184bf39f0bc72bb24'
 }
 
+import shutil
+
+def clear_folder(folder_path: str):
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isfile(item_path) or os.path.islink(item_path):
+            os.remove(item_path)  # delete files and symlinks
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)  # delete subfolders
 
 def build_timemap_url():
     """
@@ -56,6 +65,7 @@ def build_timemap_url():
         else:
             mode = "overwrite"
             print("Overwriting existing file.")
+            clear_folder(username)
     else:
         mode = "overwrite"
 

@@ -16,6 +16,7 @@ from parse_html import parse_html
 from parse_json import parse_tweet_json
 from sec_downloads import fetch_html_after_delay
 from pathlib import Path
+from urllib.parse import urlparse
 
 def secondary_download(url,timestamp,project_dir,output_dir):
     try:
@@ -55,8 +56,10 @@ def secondary_download(url,timestamp,project_dir,output_dir):
         return True
     except Exception as e:
         print(f"Error processing row: {e}")
-        traceback.print_exc()
+        # traceback.print_exc()
+        
         error_message = traceback.format_exc()
+        print(error_message)
         try:
             with open(os.path.join(project_dir,"error_tweets.txt"), "r", encoding="utf-8") as f:
                 error_tweets = f.read().splitlines()
@@ -184,7 +187,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
 
     safe_name = url.replace("https://", "").replace("http://", "").replace("/", "_")
     ext = ".html"
-    file_name = f"{timestamp}_{safe_name}{ext}"
+    file_name = f"{timestamp}_{safe_name.split("?")[0]}{ext}"
     final_file = os.path.join(output_dir, file_name)
 
     if os.path.exists(os.path.join(project_dir,"tweets.csv")):
@@ -257,6 +260,12 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
 
 
     # Find the downloaded file (index.html or index.json)
+    path_parts = urlparse(url).path.split("/")
+
+    # Username is the part after "twitter.com/"
+    user_name = path_parts[1] if len(path_parts) > 1 else "unknown"
+
+    open_temp_dir = os.path.join(tmp_dir, user_name, "status")
     open_temp_dir = os.path.join(tmp_dir,user_name,"status")
     files = os.listdir(open_temp_dir)
     file = files[0]
@@ -268,6 +277,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
     # Save permanent copy
     with open(final_file, "w", encoding="utf-8") as f:
         f.write(data)
+        print(data)
 
     # Clean temp
     try:
@@ -325,11 +335,14 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
         data = json.load(f)
 
     # Decide loop iterator
-    iterator = tqdm(data[1:], desc="Processing",file=sys.stderr) if show_tqdm else data[1:]
+    iterator = tqdm(data[2:], desc="Processing",file=sys.stderr) if show_tqdm else data[2:]
 
     # Skip header row
     for row in iterator:
+        
         original_url = row[0]
+        if "status" not in original_url:
+            continue 
         timestamp = row[2]
 
         if original_url in error_urls:
@@ -356,8 +369,9 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
                 )
         except Exception as e:
             print(f"Error processing row: {e}")
-            traceback.print_exc()
+            # traceback.print_exc()
             error_message = traceback.format_exc()
+            print(error_message)
 
             # Append only if not already in log
             if original_url not in error_urls:
