@@ -78,6 +78,6 @@ Once everything is installed:
 - These files are required for the script to run correctly.  
 - You **only need to install Python, Ruby, and requirements once**. After that, just run:  
   ```bash
-  cd Downloads/wayback_scraper
-  py downloads.py
+  cd Downloads/wayback_scraper_V2
+  py main.py
   ```
