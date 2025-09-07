@@ -17,11 +17,17 @@ from parse_json import parse_tweet_json
 from sec_downloads import fetch_html_after_delay
 from pathlib import Path
 
-def secondary_download(url,timestamp,project_dir):
+def secondary_download(url,timestamp,project_dir,output_dir):
     try:
         link = f"https://web.archive.org/web/{timestamp}/{url}"
+        safe_name = url.replace("https://", "").replace("http://", "").replace("/", "_")
+        ext = ".html"
+        file_name = f"{timestamp}_{safe_name}{ext}"
+        final_file = os.path.join(output_dir, file_name)
 
         content = fetch_html_after_delay(link)
+        with open(final_file,"w" ,encoding="utf-8") as file:
+            file.write(content)
 
         if "<!DOCTYPE html>" in content:
             soup = BeautifulSoup(content, "html.parser")
@@ -233,7 +239,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
         if "No files to download." in output:
             print("⚠️ No files to download. The site may not be in Wayback Machine.")
             print("Trying secondary download ...")
-            download_successful=secondary_download(url=url,timestamp=timestamp,project_dir=project_dir)
+            download_successful=secondary_download(url=url,timestamp=timestamp,project_dir=project_dir,output_dir=output_dir)
             shutil.rmtree(tmp_dir, ignore_errors=True)
             if download_successful:
                 print("Secondary download completed successfully.")
