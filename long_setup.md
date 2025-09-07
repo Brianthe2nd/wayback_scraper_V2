@@ -34,7 +34,7 @@ These steps only need to be done **once**.
 ---
 
 ## 3. Install Python Packages
-Navigate into the downloaded folder using `cd` (replace with your folder path).Default path if you installed in Downloads will be:  
+Navigate into the downloaded folder using `cd` (replace with your folder path). Default path if you installed in Downloads will be:  
 ```bash
 cd Downloads/wayback_scraper_V2
 ```
@@ -45,20 +45,26 @@ Then install the requirements:
 ```bash
 pip install -r requirements.txt
 ```
-## 4. Install git
-- Install [Git](https://git-scm.com/downloads)
-or run in CMD:
+
+---
+
+## 4. Install Git
+- Install [Git](https://git-scm.com/downloads)  
+or run in CMD:  
 ```bash
 winget install --id Git.Git -e --source winget
 ```
+
 ---
 
-## 5. Install ruby requirements
+## 5. Install Ruby Requirements
 ```bash
 git clone "https://github.com/ShiftaDeband/wayback-machine-downloader.git"
 ```
 
-## 5. Running the Script
+---
+
+## 6. Running the Script
 Once everything is installed:  
 1. Open Command Prompt.  
 2. Navigate to the project folder:  
@@ -79,7 +85,7 @@ Once everything is installed:
   - `errors.txt`  
 - These files are required for the script to run correctly.  
 - You **only need to install Python, Ruby, and requirements once**. After that, just run:  
-  ```bash
-  cd Downloads/wayback_scraper_V2
-  py main.py
-  ```
+   ```bash
+   cd Downloads/wayback_scraper_V2
+   py main.py
+   ```
