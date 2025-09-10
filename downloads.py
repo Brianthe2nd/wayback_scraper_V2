@@ -14,7 +14,7 @@ from openpyxl.styles import PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from parse_html import parse_html
 from parse_json import parse_tweet_json
-from sec_downloads import fetch_html_after_delay
+from sec_downloads import fetch_html_after_delay,extract_redirect_on_302
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -27,6 +27,10 @@ def secondary_download(url,timestamp,project_dir,output_dir):
         final_file = os.path.join(output_dir, file_name)
 
         content = fetch_html_after_delay(link)
+        redirect_link = extract_redirect_on_302(content)
+        if redirect_link:
+            content = fetch_html_after_delay(redirect_link)
+            retweet = True
         with open(final_file,"w" ,encoding="utf-8") as file:
             file.write(content)
 
@@ -43,7 +47,7 @@ def secondary_download(url,timestamp,project_dir,output_dir):
                 update_xlsx(project_dir=project_dir,tweet=tweet)
                 
             else:
-                tweet = parse_html(soup, link, True)
+                tweet = parse_html(soup, link, True ,retweet)
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
 
@@ -61,7 +65,7 @@ def secondary_download(url,timestamp,project_dir,output_dir):
         error_message = traceback.format_exc()
         print(error_message)
         try:
-            with open(os.path.join(project_dir,"error_tweets.txt"), "r", encoding="utf-8") as f:
+            with open(os.path.join(project_dir,f"{project_dir}_error_tweets.txt"), "r", encoding="utf-8") as f:
                 error_tweets = f.read().splitlines()
         except FileNotFoundError:
             error_tweets = []
@@ -75,7 +79,7 @@ def secondary_download(url,timestamp,project_dir,output_dir):
             error_tweets.append(url)
             error_tweets.append(error_message)
 
-            with open(os.path.join(project_dir,"error_tweets.txt"), "w", encoding="utf-8") as f:
+            with open(os.path.join(project_dir,f"{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
                 f.write("\n".join(error_tweets))
         return False
 
@@ -95,8 +99,8 @@ def delete_folder(folder_path):
 
 
 def update_xlsx(project_dir,tweet):
-    csv_file_path = os.path.join(project_dir,'tweets.csv')
-    excel_file_path = os.path.join(project_dir,'tweets.xlsx')
+    csv_file_path = os.path.join(project_dir,f'{project_dir}_tweets.csv')
+    excel_file_path = os.path.join(project_dir,f'{project_dir}_tweets.xlsx')
     """
     Updates the CSV with a new tweet and regenerates the formatted Excel file.
     
@@ -128,7 +132,7 @@ def update_xlsx(project_dir,tweet):
         df = df_new
 
     # Reorder columns
-    desired_order = ["tweet_text", "date", "image", "quote", "reply", "mentions", "username", "link"]
+    desired_order = ["tweet_text", "date", "image", "quote", "reply", "mentions","retweet", "username", "link"]
     df = df[desired_order]
 
     # Save updated CSV
@@ -190,9 +194,9 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
     file_name = f"{timestamp}_{safe_name.split("?")[0]}{ext}"
     final_file = os.path.join(output_dir, file_name)
 
-    if os.path.exists(os.path.join(project_dir,"tweets.csv")):
+    if os.path.exists(os.path.join(project_dir,f"{user_name}_tweets.csv")):
         try:
-            df = pd.read_csv(os.path.join(project_dir,"tweets.csv"))
+            df = pd.read_csv(os.path.join(project_dir,f"{user_name}_tweets.csv"))
             if "link" in df.columns and url in df["link"].values:
                 print(f"Skipping (already in tweets.csv): {url}")
                 return False
@@ -222,7 +226,10 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
         url,
         "-e",
         "-d",
-        f"../../{user_name}/archives/tmp_dl"
+        f"../../{user_name}/archives/tmp_dl",
+        "-f",
+        timestamp
+        
     ]
     print(f"Running: {cmd}")
     cwd = "wayback-machine-downloader/bin"
@@ -323,7 +330,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
 def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=True):
     # Load known error URLs (skip if file not found)
     try:
-        with open(os.path.join(project_dir, "error_tweets.txt"), "r", encoding="utf-8") as f:
+        with open(os.path.join(project_dir, f"{project_dir}_error_tweets.txt"), "r", encoding="utf-8") as f:
             error_tweets = f.read().splitlines()
     except FileNotFoundError:
         error_tweets = []
@@ -379,7 +386,7 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
                 error_tweets.append(original_url)
                 error_tweets.append(error_message)
 
-                with open(os.path.join(project_dir, "error_tweets.txt"), "w", encoding="utf-8") as f:
+                with open(os.path.join(project_dir, "{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
                     f.write("\n".join(error_tweets))
     
     print("\n")

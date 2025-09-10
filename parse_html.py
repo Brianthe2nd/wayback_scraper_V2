@@ -78,7 +78,8 @@ def parse_username(strong_tag):
 
 #permalink-overlay > div.PermalinkOverlay-modal > div.PermalinkOverlay-content > div > div > div.permalink.light-inline-actions.stream-uncapped.has-replies.original-permalink-page > div.permalink-inner.permalink-tweet-container.ThreadedConversation.ThreadedConversation--permalinkTweetWithAncestors > div > div.ReplyingToContextBelowAuthor > a > span > b
 
-def parse_html(soup,title,title_passed = False):
+def parse_html(soup,title,title_passed = False,retweet = False):
+ 
     main_container = soup.select_one('div[role="main"]')
     ancestor_container = main_container.select_one("div.permalink-in-reply-tos")
     descendant_container = main_container.select_one("div.replies-to")
@@ -111,6 +112,11 @@ def parse_html(soup,title,title_passed = False):
     print("The time is:", parse_twitter_datetime(time_text))
     time_text = parse_twitter_datetime(time_text)
     username = parse_username(link_container.select_one("strong.fullname"))
+    if retweet:
+        retweet_username = link_container.select_one("span.username > b").get_text().strip()
+    else:
+        retweet_username = ""
+    
     mentions = None
     if ancestor_container is None:
         reply = False
@@ -176,7 +182,9 @@ def parse_html(soup,title,title_passed = False):
         "image": image,
         "link": link,
         "quote": quote,
-        "reply": reply}
+        "reply": reply,
+        "retweet": retweet_username
+    }
     
     return tweet_obj
 
