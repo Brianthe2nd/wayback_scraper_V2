@@ -31,6 +31,8 @@ def secondary_download(url,timestamp,project_dir,output_dir):
         if redirect_link:
             content = fetch_html_after_delay(redirect_link)
             retweet = True
+        else:
+            retweet = False
         with open(final_file,"w" ,encoding="utf-8") as file:
             file.write(content)
 
@@ -404,9 +406,16 @@ if __name__ == "__main__":
     #     soup = BeautifulSoup(file.read(),"html.parser")
     # tweet = parse_html(soup=soup,title="hello")
     # print(tweet)
-    output_dir = "archive"
-    tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
+    # output_dir = "archive"
+    # tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
 
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)  # clean old runs
-    os.makedirs(tmp_dir, exist_ok=True)
+    # if os.path.exists(tmp_dir):
+    #     shutil.rmtree(tmp_dir)  # clean old runs
+    # os.makedirs(tmp_dir, exist_ok=True)
+    # https://web.archive.org/web/20200620164945/https://twitter.com/NekroVEVO/status/1274383951738503169
+    download_with_wmd(url="https://twitter.com/NekroVEVO/status/1274383951738503169"
+                      ,timestamp="20200620164945"
+                      ,project_dir="NekroVevo"
+                      ,user_name="NekroVevo"
+                      ,output_dir="archive",
+                      content_type="application/json")

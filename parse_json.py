@@ -81,3 +81,90 @@ def parse_tweet_json(tweet_json: dict,timestamp) -> dict:
         "reply": reply,
         "retweet": ""
     }
+
+json_str =json_str = r'''{
+  "contributors": null,
+  "coordinates": null,
+  "created_at": "Sat Jun 20 16:49:45 +0000 2020",
+  "display_text_range": [27, 76],
+  "entities": {
+    "hashtags": [],
+    "symbols": [],
+    "urls": [],
+    "user_mentions": [
+      {
+        "id": 1183184898070405120,
+        "id_str": "1183184898070405120",
+        "indices": [0, 15],
+        "name": "\ud83c\udff3\ufe0f\u200d\ud83c\udf08 Soap \ud83c\udff3\ufe0f\u200d\ud83c\udf08",
+        "screen_name": "Soap_The_Scrub"
+      },
+      {
+        "id": 1269340565050703873,
+        "id_str": "1269340565050703873",
+        "indices": [16, 26],
+        "name": "Justin",
+        "screen_name": "PocoRolve"
+      }
+    ]
+  },
+  "favorite_count": 0,
+  "favorited": false,
+  "filter_level": "low",
+  "geo": null,
+  "id": 1274383951738503169,
+  "id_str": "1274383951738503169",
+  "in_reply_to_screen_name": "Soap_The_Scrub",
+  "in_reply_to_status_id": 1274382689483841536,
+  "in_reply_to_status_id_str": "1274382689483841536",
+  "in_reply_to_user_id": 1183184898070405120,
+  "in_reply_to_user_id_str": "1183184898070405120",
+  "is_quote_status": false,
+  "lang": "en",
+  "place": null,
+  "quote_count": 0,
+  "reply_count": 0,
+  "retweet_count": 0,
+  "retweeted": false,
+  "source": "Twitter Web App",
+  "text": "@Soap_The_Scrub @PocoRolve \u201cI don\u2019t know any of them so fuck you\u201d\n\n?????????",
+  "timestamp_ms": "1592671785660",
+  "truncated": false,
+  "user": {
+    "contributors_enabled": false,
+    "created_at": "Fri Mar 23 20:26:52 +0000 2018",
+    "default_profile": false,
+    "default_profile_image": false,
+    "description": "\ud83c\udf1fHyena\ud83c\udf1fMINOR\ud83c\udf1fBLM\ud83c\udf1fACAB\ud83c\udf1fPFP: @Blu_Folf\ud83c\udf1fHe/They NB\ud83c\udf1fCo-Owner of @DailyYeens\ud83c\udf1fBanner: @BirdWithThWord\ud83c\udf1f",
+    "favourites_count": 24005,
+    "followers_count": 2878,
+    "friends_count": 397,
+    "geo_enabled": false,
+    "id": 977280541316628480,
+    "id_str": "977280541316628480",
+    "lang": null,
+    "listed_count": 39,
+    "location": "potoe",
+    "name": "\ud83c\udf1fNEKRO\ud83c\udf1f",
+    "profile_background_color": "000000",
+    "profile_background_image_url": "http://abs.twimg.com/images/themes/theme1/bg.png",
+    "profile_background_image_url_https": "https://abs.twimg.com/images/themes/theme1/bg.png",
+    "profile_banner_url": "https://pbs.twimg.com/profile_banners/977280541316628480/1592429715",
+    "profile_image_url": "http://pbs.twimg.com/profile_images/1272335858163544066/-s0Zpzi5_normal.jpg",
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1272335858163544066/-s0Zpzi5_normal.jpg",
+    "profile_link_color": "981CEB",
+    "protected": false,
+    "screen_name": "NekroVEVO",
+    "statuses_count": 12218,
+    "translator_type": "none",
+    "url": "https://www.youtube.com/channel/UC8Kg_ZpkoMvJzOAGuzyeq6A?view_as=subscriber",
+    "verified": false
+  }
+}'''
+
+if __name__ == "__main__":
+    import json
+    
+    json_data = json.loads(json_str)
+    tweet = parse_tweet_json(json_data,245271)
+    print(tweet)
