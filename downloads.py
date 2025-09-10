@@ -226,7 +226,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
         url,
         "-e",
         "-d",
-        f"../../{user_name}/archives/tmp_dl",
+        f"../../{user_name}/{project_dir}_archive/tmp_dl",
         "-f",
         timestamp
         
@@ -386,7 +386,7 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
                 error_tweets.append(original_url)
                 error_tweets.append(error_message)
 
-                with open(os.path.join(project_dir, "{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
+                with open(os.path.join(project_dir, f"{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
                     f.write("\n".join(error_tweets))
     
     print("\n")

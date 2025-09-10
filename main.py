@@ -23,7 +23,7 @@ class Tee:
 
 if __name__ == "__main__":
     output_file, username = get_links()
-    archive_folder = os.path.join(username, f"{username}_archives")
+    archive_folder = os.path.join(username, f"{username}_archive")
     os.makedirs(archive_folder, exist_ok=True)
 
     show_tqdm = input("Show progress bar instead of logs [y/n]: ").lower().strip()
