@@ -106,30 +106,44 @@ def get_html_file_path(folder_name , link):
     
 
 
+import sys
+import traceback
+from tqdm import tqdm
+
 def process_errors(error_path):
     date_errors = get_links_with_datetime_errors(error_path)
 
-    # First loop with tqdm
-    for link in tqdm(date_errors, desc="Processing datetime errors", unit="tweet"):
-        with open(os.devnull, "w") as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
-            array, folder_name = get_tweet_array(link, error_path)
-            html_file_path = get_html_file_path(folder_name, link)
+    # for link in tqdm(date_errors, desc="Processing datetime errors", unit="tweet"):
+    #     try:
+    #         array, folder_name = get_tweet_array(link, error_path)
+    #         html_file_path = get_html_file_path(folder_name, link)
 
-            with open(html_file_path, "r", encoding="utf-8") as file:
-                html_text = file.read()
+    #         with open(html_file_path, "r", encoding="utf-8") as file:
+    #             html_text = file.read()
 
-            soup = BeautifulSoup(html_text, "html.parser")
-            tweet = parse_html(soup, html_file_path)
-            update_xlsx(project_dir=folder_name, tweet=tweet)
-            update_errors_xlsx(project_dir=folder_name, tweet=tweet)
+    #         from bs4 import BeautifulSoup
+    #         soup = BeautifulSoup(html_text, "html.parser")
+    #         tweet = parse_html(soup, html_file_path)
 
-    # Second loop with tqdm
+    #         update_xlsx(project_dir=folder_name, tweet=tweet)
+    #         update_errors_xlsx(project_dir=folder_name, tweet=tweet)
+    #         print("\n")
+
+    #     except Exception as e:
+    #         print(f"Error processing datetime error link {link}: {e}")
+    #         traceback.print_exc()
+
     all_errors = get_all_twitter_links("voltfolf_error_tweets.txt")
+
     for link in tqdm(all_errors, desc="Processing all errors", unit="tweet"):
         if link not in date_errors:
-            with open(os.devnull, "w") as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
-                array, folder_name = get_tweet_array(link)
+            try:
+                array, folder_name = get_tweet_array(link,error_path)
                 process_errors_tweets(array, folder_name, folder_name)
+            except Exception as e:
+                print(f"Error processing general error link {link}: {e}")
+                traceback.print_exc()
+
 
 # Example usage:
 if __name__ == "__main__":
