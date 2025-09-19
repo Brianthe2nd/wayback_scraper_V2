@@ -2,8 +2,14 @@ import re
 from typing import List, Dict, Optional
 import os
 import json
+from tqdm import tqdm
 from parse_html import parse_html
 from downloads import update_xlsx,update_errors_xlsx,process_errors_tweets
+import sys
+import os
+from contextlib import redirect_stdout, redirect_stderr
+from tqdm import tqdm
+from bs4 import BeautifulSoup
 
 TWITTER_STATUS_RE = re.compile(r'https?://(?:www\.)?twitter\.com/[^/\s]+/status/\d+')
 ERROR_RE = re.compile(r'Date format not recognized\s*:?\s*(.*)', re.IGNORECASE)
@@ -98,39 +104,40 @@ def get_html_file_path(folder_name , link):
         if link_id in html:
             return os.path.join(archives_path,html)
     
+
+
 def process_errors(error_path):
     date_errors = get_links_with_datetime_errors(error_path)
 
-    
-    for link in date_errors:
-        array,folder_name = get_tweet_array(link,error_path)
-        html_file_path = get_html_file_path(folder_name,link)
-        print("The html file path is:", html_file_path)
-        
-        with open(html_file_path,"r",encoding="utf-8") as file:
-            html_text = file.read()
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html_text,"html.parser")
-        tweet = parse_html(soup,html_file_path)
-        update_xlsx(project_dir=folder_name,tweet=tweet)
-        update_errors_xlsx(project_dir=folder_name,tweet=tweet)
-        
-        
-        # print("Error line:", m["error_line"])
-        # print("Unrecognized datetime:", m["unrecognized_datetime"])
-        # print("-" * 60)
+    # First loop with tqdm
+    for link in tqdm(date_errors, desc="Processing datetime errors", unit="tweet"):
+        with open(os.devnull, "w") as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
+            array, folder_name = get_tweet_array(link, error_path)
+            html_file_path = get_html_file_path(folder_name, link)
+
+            with open(html_file_path, "r", encoding="utf-8") as file:
+                html_text = file.read()
+
+            soup = BeautifulSoup(html_text, "html.parser")
+            tweet = parse_html(soup, html_file_path)
+            update_xlsx(project_dir=folder_name, tweet=tweet)
+            update_errors_xlsx(project_dir=folder_name, tweet=tweet)
+
+    # Second loop with tqdm
     all_errors = get_all_twitter_links("voltfolf_error_tweets.txt")
-    for link in all_errors:
+    for link in tqdm(all_errors, desc="Processing all errors", unit="tweet"):
         if link not in date_errors:
-            array,folder_name = get_tweet_array(link)
-            process_errors_tweets(array,folder_name,folder_name)
+            with open(os.devnull, "w") as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
+                array, folder_name = get_tweet_array(link)
+                process_errors_tweets(array, folder_name, folder_name)
 
 # Example usage:
 if __name__ == "__main__":
     date_errors = get_links_with_datetime_errors("voltfolf_error_tweets.txt")
     error_path = "voltfolf\\voltfolf_error_tweets.txt"
+    import sys
     
-    for link in date_errors:
+    for link in tqdm(date_errors, desc="Processing",file=sys.stderr):
         array,folder_name = get_tweet_array(link,error_path)
         html_file_path = get_html_file_path(folder_name,link)
         print("The html file path is : ",html_file_path)
