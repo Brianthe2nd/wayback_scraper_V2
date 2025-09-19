@@ -17,6 +17,7 @@ from parse_json import parse_tweet_json
 from sec_downloads import fetch_html_after_delay,extract_redirect_on_302
 from pathlib import Path
 from urllib.parse import urlparse
+from internet import has_internet 
 
 def secondary_download(url,timestamp,project_dir,output_dir):
     try:
@@ -98,11 +99,9 @@ def delete_folder(folder_path):
         print(f"Folder '{folder_path}' does not exist.")
 
 
-
-
-def update_xlsx(project_dir,tweet):
-    csv_file_path = os.path.join(project_dir,f'{project_dir}_tweets.csv')
-    excel_file_path = os.path.join(project_dir,f'{project_dir}_tweets.xlsx')
+def update_errors_xlsx(project_dir,tweet):
+    csv_file_path = os.path.join(project_dir,f'{project_dir}_tweets_fix.csv')
+    excel_file_path = os.path.join(project_dir,f'{project_dir}_tweets_fix.xlsx')
     """
     Updates the CSV with a new tweet and regenerates the formatted Excel file.
     
@@ -134,7 +133,7 @@ def update_xlsx(project_dir,tweet):
         df = df_new
 
     # Reorder columns
-    desired_order = ["tweet_text", "date", "image", "quote", "reply", "mentions","retweet", "username", "link"]
+    desired_order = ["tweet_text", "date", "image", "quote", "reply", "mentions","retweet","author", "username", "link"]
     df = df[desired_order]
 
     # Save updated CSV
@@ -188,7 +187,96 @@ def update_xlsx(project_dir,tweet):
 
 
 
-def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/html", output_dir="archive"):
+
+def update_xlsx(project_dir,tweet):
+    csv_file_path = os.path.join(project_dir,f'{project_dir}_tweets.csv')
+    excel_file_path = os.path.join(project_dir,f'{project_dir}_tweets.xlsx')
+    """
+    Updates the CSV with a new tweet and regenerates the formatted Excel file.
+    
+    tweet: dict
+        Example:
+        {
+            "tweet_text": "Some tweet text",
+            "date": "2020-09-03 08:04:00",
+            "image": True,
+            "quote": False,
+            "reply": True,
+            "mentions": "@someone",
+            "username": "user123",
+            "link": "https://twitter.com/user123/status/..."
+        }
+    """
+
+    # Ensure CSV exists, otherwise create with headers
+    file_exists = os.path.isfile(csv_file_path)
+    df_new = pd.DataFrame([tweet])
+
+    if file_exists:
+        df = pd.read_csv(csv_file_path)
+        df = pd.concat([df, df_new], ignore_index=True)
+
+        # 🔑 Remove duplicates (keep first occurrence)
+        df = df.drop_duplicates(subset=["link"], keep="first").reset_index(drop=True)
+    else:
+        df = df_new
+
+    # Reorder columns
+    desired_order = ["tweet_text", "date", "image", "quote", "reply", "mentions","retweet","author", "username", "link"]
+    df = df[desired_order]
+
+    # Save updated CSV
+    df.to_csv(csv_file_path, index=False)
+
+    # Save to Excel first
+    df.to_excel(excel_file_path, index=False)
+
+    # Load workbook
+    wb = load_workbook(excel_file_path)
+    ws = wb.active
+
+    # Define fills (colors)
+    green_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    blue_fill = PatternFill(start_color="00B0F0", end_color="00B0F0", fill_type="solid")
+
+    # Format columns
+    for col_idx, col_name in enumerate(df.columns, start=1):
+        col_letter = get_column_letter(col_idx)
+        col_values = df[col_name].astype(str)
+        max_len = max(col_values.map(len).max(), len(col_name))
+
+        # Special case for tweet_text
+        if col_name == "tweet_text":
+            desired_width = max_len // 3 + 5
+            wrap = True
+        else:
+            desired_width = min(max_len + 5, 50)  # cap width
+            wrap = False
+
+        ws.column_dimensions[col_letter].width = desired_width
+
+        # Apply cell formatting
+        for row in ws.iter_rows(min_row=2, min_col=col_idx, max_col=col_idx, max_row=ws.max_row):
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=wrap, vertical="bottom")
+
+                # Color logic
+                if col_name == "image" and str(cell.value).upper() == "TRUE":
+                    cell.fill = green_fill
+                elif col_name == "quote" and str(cell.value).upper() == "TRUE":
+                    cell.fill = yellow_fill
+                elif col_name == "reply" and str(cell.value).upper() == "TRUE":
+                    cell.fill = blue_fill
+
+    # Save workbook
+    wb.save(excel_file_path)
+
+    print(f"Tweet added and '{excel_file_path}' updated successfully with formatting.")
+
+
+
+def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/html", output_dir="archive",update_errors=False):
     os.makedirs(output_dir, exist_ok=True)
 
     safe_name = url.replace("https://", "").replace("http://", "").replace("/", "_")
@@ -310,24 +398,95 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
                 tweet = parse_tweet_json(tweet_json, timestamp)
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
+                if update_errors :
+                    update_errors_xlsx(project_dir,tweet)
                 
             else:
                 tweet = parse_html(soup, link, True)
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
-                
+                if update_errors :
+                    update_errors_xlsx(project_dir,tweet)
         else:
             tweet_json = json.loads(data)
             tweet = parse_tweet_json(tweet_json, timestamp)
             print(tweet)
             update_xlsx(project_dir=project_dir,tweet=tweet)
-
+            if update_errors :
+                update_errors_xlsx(project_dir,tweet)
     else:
         soup = BeautifulSoup(data, "html.parser")
         tweet = parse_html(soup, file_name)
         update_xlsx(project_dir=project_dir,tweet=tweet)
+        if update_errors :
+            update_errors_xlsx(project_dir,tweet)
+        
     return True
 
+def process_errors_tweets(tweet_array,project_dir,output_dir):
+    original_url = tweet_array[0]
+    timestamp = tweet_array[2]
+    try:
+        with open(os.path.join(project_dir, f"{project_dir}_errors_fix_1.txt"), "r", encoding="utf-8") as f:
+            error_tweets = f.read().splitlines()
+    except FileNotFoundError:
+        error_tweets = []
+
+    # Use a set for faster lookups
+    error_urls = set(error_tweets)
+    
+    try:
+        if "application/json" in tweet_array[1]:
+            download_with_wmd(
+                url=original_url,
+                timestamp=timestamp,
+                project_dir=project_dir,
+                content_type="application/json",
+                output_dir=output_dir,
+                user_name=project_dir,
+            )
+        else:
+            download_with_wmd(
+                url=original_url,
+                timestamp=timestamp,
+                project_dir=project_dir,
+                output_dir=output_dir,
+                user_name=project_dir,
+            )
+    except Exception as e:
+        timestamp = tweet_array[3]
+        try:
+            if "application/json" in tweet_array[1]:
+                download_with_wmd(
+                    url=original_url,
+                    timestamp=timestamp,
+                    project_dir=project_dir,
+                    content_type="application/json",
+                    output_dir=output_dir,
+                    user_name=project_dir,
+                )
+            else:
+                download_with_wmd(
+                    url=original_url,
+                    timestamp=timestamp,
+                    project_dir=project_dir,
+                    output_dir=output_dir,
+                    user_name=project_dir,
+                )
+        except:
+            print(f"Error processing row: {e}")
+            # traceback.print_exc()
+            error_message = traceback.format_exc()
+            print(error_message)
+
+            # Append only if not already in log
+            if original_url not in error_urls:
+                error_urls.add(original_url)
+                error_tweets.append(original_url)
+                error_tweets.append(error_message)
+
+                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_1.txt"), "w", encoding="utf-8") as f:
+                    f.write("\n".join(error_tweets))
 
 def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=True):
     # Load known error URLs (skip if file not found)
@@ -344,10 +503,15 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
         data = json.load(f)
 
     # Decide loop iterator
-    iterator = tqdm(data[2:], desc="Processing",file=sys.stderr) if show_tqdm else data[2:]
+    iterator = tqdm(data, desc="Processing",file=sys.stderr) if show_tqdm else data
 
     # Skip header row
     for row in iterator:
+        
+        if not has_internet:
+            print("Please check your internet connection")
+            print("Sleeping for 10 seconds ...")
+            time.sleep(10)
         
         original_url = row[0]
         if "status" not in original_url:
@@ -377,20 +541,40 @@ def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=Tr
                     user_name=project_dir,
                 )
         except Exception as e:
-            print(f"Error processing row: {e}")
-            # traceback.print_exc()
-            error_message = traceback.format_exc()
-            print(error_message)
+            timestamp = row[3]
+            try:
+                if "application/json" in row[1]:
+                    download_with_wmd(
+                        url=original_url,
+                        timestamp=timestamp,
+                        project_dir=project_dir,
+                        content_type="application/json",
+                        output_dir=output_dir,
+                        user_name=project_dir,
+                    )
+                else:
+                    download_with_wmd(
+                        url=original_url,
+                        timestamp=timestamp,
+                        project_dir=project_dir,
+                        output_dir=output_dir,
+                        user_name=project_dir,
+                    )
+            except Exception as e:
+                print(f"Error processing row: {e}")
+                # traceback.print_exc()
+                error_message = traceback.format_exc()
+                print(error_message)
 
-            # Append only if not already in log
-            if original_url not in error_urls:
-                error_urls.add(original_url)
-                error_tweets.append(original_url)
-                error_tweets.append(error_message)
+                # Append only if not already in log
+                if original_url not in error_urls:
+                    error_urls.add(original_url)
+                    error_tweets.append(original_url)
+                    error_tweets.append(error_message)
 
-                with open(os.path.join(project_dir, f"{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
-                    f.write("\n".join(error_tweets))
-    
+                    with open(os.path.join(project_dir, f"{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
+                        f.write("\n".join(error_tweets))
+        
     print("\n")
 
 

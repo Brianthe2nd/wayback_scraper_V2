@@ -79,7 +79,8 @@ def parse_tweet_json(tweet_json: dict,timestamp) -> dict:
         "link": link,
         "quote": quote,
         "reply": reply,
-        "retweet": ""
+        "retweet": "",
+        "author":tweet_json.get("user").get("screen_name") 
     }
 
 json_str =json_str = r'''{

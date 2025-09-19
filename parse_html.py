@@ -21,35 +21,41 @@ def parse_tweet(tweet_container):
 # from datetime import datetime
 
 def parse_twitter_datetime(date_str: str) -> datetime:
-    formats = [
-        "%I:%M %p - %d %b %Y",     # e.g. "9:14 PM - 28 Sep 2020"
-        "%H:%M - %d. %b %Y",       # e.g. "21:14 - 28. Sep 2020"
-        "%H.%M - %d. %b %Y",       # e.g. "14.06 - 30. Sep 2020" (Finnish style)
-    ]
-    
-    # Normalize localized month abbreviations (German, Finnish etc.)
-    replacements = {
-        # German
-        "Jan.": "Jan", "Feb.": "Feb", "März": "Mar", "Apr.": "Apr",
-        "Mai": "May", "Juni": "Jun", "Juli": "Jul", "Aug.": "Aug",
-        "Sept.": "Sep", "Okt.": "Oct", "Nov.": "Nov", "Dez.": "Dec",
-        # Finnish
-        "tammi": "Jan", "helmi": "Feb", "maalis": "Mar", "huhti": "Apr",
-        "touko": "May", "kesä": "Jun", "heinä": "Jul", "elo": "Aug",
-        "syysk.": "Sep", "lokak.": "Oct", "marras": "Nov", "joulu": "Dec",
-    }
-    for de, en in replacements.items():
-        if de in date_str:
-            date_str = date_str.replace(de, en)
-            break
-    
-    for fmt in formats:
-        try:
-            return datetime.strptime(date_str, fmt)
-        except ValueError:
-            continue
-    
-    raise ValueError(f"Date format not recognized: {date_str}")
+    try:
+        formats = [
+            "%I:%M %p - %d %b %Y",     # e.g. "9:14 PM - 28 Sep 2020"
+            "%H:%M - %d. %b %Y",       # e.g. "21:14 - 28. Sep 2020"
+            "%H.%M - %d. %b %Y",       # e.g. "14.06 - 30. Sep 2020" (Finnish style)
+        ]
+        
+        # Normalize localized month abbreviations (German, Finnish etc.)
+        replacements = {
+            # German
+            "Jan.": "Jan", "Feb.": "Feb", "März": "Mar", "Apr.": "Apr",
+            "Mai": "May", "Juni": "Jun", "Juli": "Jul", "Aug.": "Aug",
+            "Sept.": "Sep", "Okt.": "Oct", "Nov.": "Nov", "Dez.": "Dec",
+            # Finnish
+            "tammi": "Jan", "helmi": "Feb", "maalis": "Mar", "huhti": "Apr",
+            "touko": "May", "kesä": "Jun", "heinä": "Jul", "elo": "Aug",
+            "syysk.": "Sep", "lokak.": "Oct", "marras": "Nov", "joulu": "Dec",
+        }
+        for de, en in replacements.items():
+            if de in date_str:
+                date_str = date_str.replace(de, en)
+                break
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(date_str, fmt)
+            except ValueError:
+                continue
+    except:
+        error = traceback.format_exc
+        print("Error while processing date")
+        print(error)
+        return None
+        
+    # raise ValueError(f"Date format not recognized: {date_str}")
 
 
 # Example
@@ -109,7 +115,7 @@ def parse_html(soup,title,title_passed = False,retweet = False):
     time_text = time_elem.get_text().strip()
     
     # print("The tweet is :", tweet_text)
-    print("The time is:", parse_twitter_datetime(time_text))
+    # print("The time is:", parse_twitter_datetime(time_text))
     time_text = parse_twitter_datetime(time_text)
     username = parse_username(link_container.select_one("strong.fullname"))
     if retweet:
@@ -149,10 +155,12 @@ def parse_html(soup,title,title_passed = False,retweet = False):
         else:
             mentions = mentions.get_text().strip()
         
-    
+    author = soup.select_one("div.content.clearfix > div > a > span.username.u-dir.u-textTruncate > b").get_text().strip()
     link = get_archive_link(soup)
+    print("The title is: ",title)
     if not title_passed:
         if  "web.archive.org" not in link and "twitter" in link:
+            
             timeline = title.split("_")[0]
             link = f"https://web.archive.org/web/{timeline}/{link}"
     else :
@@ -173,6 +181,7 @@ def parse_html(soup,title,title_passed = False,retweet = False):
     print("Link:",link)
     print("Quote:",quote)
     print("Reply:",reply)
+    print("Author:",author)
     
     tweet_obj = {
         "tweet_text": tweet_text,
@@ -183,7 +192,8 @@ def parse_html(soup,title,title_passed = False,retweet = False):
         "link": link,
         "quote": quote,
         "reply": reply,
-        "retweet": retweet_username
+        "retweet": retweet_username,
+        "author":author
     }
     
     return tweet_obj
