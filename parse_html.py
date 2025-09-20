@@ -157,7 +157,7 @@ def parse_html(soup,title,title_passed = False,retweet = False):
         
     author = soup.select_one("div.content.clearfix > div > a > span.username.u-dir.u-textTruncate > b").get_text().strip()
     link = get_archive_link(soup)
-    print("The title is: ",title)
+    # print("The title is: ",title)
     if not title_passed:
         if  "web.archive.org" not in link and "twitter" in link:
             

@@ -296,92 +296,98 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
     # Skip if already saved
     if os.path.exists(final_file):
         print(f"Skipping (already saved): {final_file}")
-        return False
+        index_path = final_file
+        # return False
+        first_download = False
+    else:
 
-    # Temporary folder for downloader
-
-    tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
-    
-
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)  # clean old runs
-    os.makedirs(tmp_dir, exist_ok=True)
-
-    # Run wayback_machine_downloader
-    # safe_tmp_dir = Path(tmp_dir).as_posix()  # forward slashes, Ruby-friendly
-
-    cmd = [
-        "ruby",
-        "wayback_machine_downloader",
-        url,
-        "-e",
-        "-d",
-        f"../../{user_name}/{project_dir}_archive/tmp_dl",
-        "-f",
-        timestamp
+        # Temporary folder for downloader
+        first_download = True
+        tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
         
-    ]
-    print(f"Running: {cmd}")
-    cwd = "wayback-machine-downloader/bin"
 
-    try:
-        result = subprocess.run(
-            cmd,
-            cwd=cwd,
-            shell=True,             # needed since cmd is a string
-            check=True,
-            capture_output=True,    # capture stdout + stderr
-            text=True               # decode to str instead of bytes
-        )
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)  # clean old runs
+        os.makedirs(tmp_dir, exist_ok=True)
 
-        # Check if the output contains "No files to download"
-        output = result.stdout + result.stderr
-        if "No files to download." in output:
-            print("⚠️ No files to download. The site may not be in Wayback Machine.")
-            print("Trying secondary download ...")
-            download_successful=secondary_download(url=url,timestamp=timestamp,project_dir=project_dir,output_dir=output_dir)
+        # Run wayback_machine_downloader
+        # safe_tmp_dir = Path(tmp_dir).as_posix()  # forward slashes, Ruby-friendly
+
+        cmd = [
+            "ruby",
+            "wayback_machine_downloader",
+            url,
+            "-e",
+            "-d",
+            f"../../{user_name}/{project_dir}_archive/tmp_dl",
+            "-f",
+            timestamp
+            
+        ]
+        print(f"Running: {cmd}")
+        cwd = "wayback-machine-downloader/bin"
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=cwd,
+                shell=True,             # needed since cmd is a string
+                check=True,
+                capture_output=True,    # capture stdout + stderr
+                text=True               # decode to str instead of bytes
+            )
+
+            # Check if the output contains "No files to download"
+            output = result.stdout + result.stderr
+            if "No files to download." in output:
+                print("⚠️ No files to download. The site may not be in Wayback Machine.")
+                print("Trying secondary download ...")
+                download_successful=secondary_download(url=url,timestamp=timestamp,project_dir=project_dir,output_dir=output_dir)
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+                if download_successful:
+                    print("Secondary download completed successfully.")
+                else:
+                    print("Secondary download failed")
+                return
+            print("✅ Download completed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Downloader failed for {url}: {e}")
+            if e.stdout:
+                print("STDOUT:", e.stdout)
+            if e.stderr:
+                print("STDERR:", e.stderr)
             shutil.rmtree(tmp_dir, ignore_errors=True)
-            if download_successful:
-                print("Secondary download completed successfully.")
-            else:
-                print("Secondary download failed")
-            return
-        print("✅ Download completed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Downloader failed for {url}: {e}")
-        if e.stdout:
-            print("STDOUT:", e.stdout)
-        if e.stderr:
-            print("STDERR:", e.stderr)
-        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-    # Find the downloaded file (index.html or index.json)
-    path_parts = urlparse(url).path.split("/")
+        # Find the downloaded file (index.html or index.json)
+        path_parts = urlparse(url).path.split("/")
 
-    # Username is the part after "twitter.com/"
-    user_name = path_parts[1] if len(path_parts) > 1 else "unknown"
+        # Username is the part after "twitter.com/"
+        user_name = path_parts[1] if len(path_parts) > 1 else "unknown"
 
-    open_temp_dir = os.path.join(tmp_dir, user_name, "status")
-    open_temp_dir = os.path.join(tmp_dir,user_name,"status")
-    files = os.listdir(open_temp_dir)
-    file = files[0]
-    index_file = os.listdir(f"{open_temp_dir}/{file}")[0]
-    index_path = os.path.join(open_temp_dir,file,index_file)
+        open_temp_dir = os.path.join(tmp_dir, user_name, "status")
+        open_temp_dir = os.path.join(tmp_dir,user_name,"status")
+        files = os.listdir(open_temp_dir)
+        file = files[0]
+        index_file = os.listdir(f"{open_temp_dir}/{file}")[0]
+        index_path = os.path.join(open_temp_dir,file,index_file)
+    
+    
     with open(index_path, encoding="utf-8") as f:
         data = f.read()
 
     # Save permanent copy
-    with open(final_file, "w", encoding="utf-8") as f:
-        f.write(data)
-        print(data)
+    if first_download:
+        with open(final_file, "w", encoding="utf-8") as f:
+            f.write(data)
+            # print(data)
 
-    # Clean temp
-    try:
-        delete_folder(open_temp_dir)
-        print(f"Folder '{open_temp_dir}' deleted successfully.")
-    except OSError as e:
-        print(f"Error deleting folder '{open_temp_dir}': {e}")
+        # Clean temp
+        try:
+            delete_folder(open_temp_dir)
+            print(f"Folder '{open_temp_dir}' deleted successfully.")
+        except OSError as e:
+            print(f"Error deleting folder '{open_temp_dir}': {e}")
 
     # Parse according to type
     if content_type == "application/json":
@@ -424,6 +430,11 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
     return True
 
 def process_errors_tweets(tweet_array,project_dir,output_dir):
+    print(tweet_array)
+    print("Project_dir: ",project_dir)
+    print("Output_dir: ",output_dir)
+    
+    
     original_url = tweet_array[0]
     timestamp = tweet_array[2]
     try:

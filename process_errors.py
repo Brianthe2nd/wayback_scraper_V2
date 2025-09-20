@@ -3,12 +3,11 @@ from typing import List, Dict, Optional
 import os
 import json
 from tqdm import tqdm
+import sys
+import traceback
 from parse_html import parse_html
 from downloads import update_xlsx,update_errors_xlsx,process_errors_tweets
-import sys
-import os
 from contextlib import redirect_stdout, redirect_stderr
-from tqdm import tqdm
 from bs4 import BeautifulSoup
 
 TWITTER_STATUS_RE = re.compile(r'https?://(?:www\.)?twitter\.com/[^/\s]+/status/\d+')
@@ -81,7 +80,7 @@ def get_links_with_datetime_errors(file_path: str) -> List[Dict[str, Optional[st
     return results
 
 def get_tweet_array(tweet_link,path):
-    print("tHE path is ",path)
+    # print("tHE path is ",path)
     path_parts = path.split("\\")
     folder =path_parts[-2]
     error_tweets_name_parts = path_parts[-1].split("_")
@@ -106,43 +105,45 @@ def get_html_file_path(folder_name , link):
     
 
 
-import sys
-import traceback
-from tqdm import tqdm
+
 
 def process_errors(error_path):
     date_errors = get_links_with_datetime_errors(error_path)
 
-    # for link in tqdm(date_errors, desc="Processing datetime errors", unit="tweet"):
-    #     try:
-    #         array, folder_name = get_tweet_array(link, error_path)
-    #         html_file_path = get_html_file_path(folder_name, link)
+    for link in tqdm(date_errors, desc="Processing datetime errors", unit="tweet"):
+        try:
+            array, folder_name = get_tweet_array(link, error_path)
+            html_file_path = get_html_file_path(folder_name, link)
 
-    #         with open(html_file_path, "r", encoding="utf-8") as file:
-    #             html_text = file.read()
+            with open(html_file_path, "r", encoding="utf-8") as file:
+                html_text = file.read()
 
-    #         from bs4 import BeautifulSoup
-    #         soup = BeautifulSoup(html_text, "html.parser")
-    #         tweet = parse_html(soup, html_file_path)
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_text, "html.parser")
+            tweet = parse_html(soup, html_file_path)
 
-    #         update_xlsx(project_dir=folder_name, tweet=tweet)
-    #         update_errors_xlsx(project_dir=folder_name, tweet=tweet)
-    #         print("\n")
+            update_xlsx(project_dir=folder_name, tweet=tweet)
+            update_errors_xlsx(project_dir=folder_name, tweet=tweet)
+            print("\n")
 
-    #     except Exception as e:
-    #         print(f"Error processing datetime error link {link}: {e}")
-    #         traceback.print_exc()
+        except Exception as e:
+            print(f"Error processing datetime error link {link}: {e}")
+            traceback.print_exc()
 
     all_errors = get_all_twitter_links("voltfolf_error_tweets.txt")
-
-    for link in tqdm(all_errors, desc="Processing all errors", unit="tweet"):
-        if link not in date_errors:
-            try:
-                array, folder_name = get_tweet_array(link,error_path)
-                process_errors_tweets(array, folder_name, folder_name)
-            except Exception as e:
-                print(f"Error processing general error link {link}: {e}")
-                traceback.print_exc()
+    other_errors =[]
+    for error in all_errors:
+        if error not in date_errors:
+            other_errors.append(error)
+    
+    for link in tqdm(other_errors, desc="Processing all errors", unit="tweet"):
+        try:
+            array, folder_name = get_tweet_array(link,error_path)
+            process_errors_tweets(array, folder_name, os.path.join(folder_name,folder_name+"_archive"))
+        except Exception as e:
+            print(f"Error processing general error link {link}: {e}")
+            traceback.print_exc()
+        print("\n")
 
 
 # Example usage:
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     for link in tqdm(date_errors, desc="Processing",file=sys.stderr):
         array,folder_name = get_tweet_array(link,error_path)
         html_file_path = get_html_file_path(folder_name,link)
-        print("The html file path is : ",html_file_path)
+        # print("The html file path is : ",html_file_path)
         
         with open(html_file_path,"r",encoding="utf-8") as file:
             html_text = file.read()
