@@ -120,6 +120,11 @@ def process_errors(error_path):
 
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(html_text, "html.parser")
+            # print("\n")
+            # print("The html file path is :")
+            # print(html_file_path)
+            html_file_path = html_file_path.split("\\")[-1]
+            
             tweet = parse_html(soup, html_file_path)
 
             update_xlsx(project_dir=folder_name, tweet=tweet)
@@ -130,7 +135,7 @@ def process_errors(error_path):
             print(f"Error processing datetime error link {link}: {e}")
             traceback.print_exc()
 
-    all_errors = get_all_twitter_links("voltfolf_error_tweets.txt")
+    all_errors = get_all_twitter_links(error_path)
     other_errors =[]
     for error in all_errors:
         if error not in date_errors:
