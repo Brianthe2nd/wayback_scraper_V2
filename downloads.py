@@ -99,9 +99,9 @@ def delete_folder(folder_path):
         print(f"Folder '{folder_path}' does not exist.")
 
 
-def update_errors_xlsx(project_dir,tweet):
-    csv_file_path = os.path.join(project_dir,f'{project_dir}_tweets_fix.csv')
-    excel_file_path = os.path.join(project_dir,f'{project_dir}_tweets_fix.xlsx')
+def update_errors_xlsx(project_dir,tweet,file_number):
+    csv_file_path = os.path.join(project_dir,f'{project_dir}_tweets_fix_{file_number}.csv')
+    excel_file_path = os.path.join(project_dir,f'{project_dir}_tweets_fix_{file_number}.xlsx')
     """
     Updates the CSV with a new tweet and regenerates the formatted Excel file.
     
@@ -276,7 +276,7 @@ def update_xlsx(project_dir,tweet):
 
 
 
-def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/html", output_dir="archive",update_errors=False):
+def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/html", output_dir="archive",update_errors=False,file_number="1"):
     os.makedirs(output_dir, exist_ok=True)
 
     safe_name = url.replace("https://", "").replace("http://", "").replace("/", "_")
@@ -405,31 +405,31 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
                 if update_errors :
-                    update_errors_xlsx(project_dir,tweet)
+                    update_errors_xlsx(project_dir,tweet,file_number=file_number)
                 
             else:
                 tweet = parse_html(soup, link, True)
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
                 if update_errors :
-                    update_errors_xlsx(project_dir,tweet)
+                    update_errors_xlsx(project_dir,tweet,file_number=file_number)
         else:
             tweet_json = json.loads(data)
             tweet = parse_tweet_json(tweet_json, timestamp)
             print(tweet)
             update_xlsx(project_dir=project_dir,tweet=tweet)
             if update_errors :
-                update_errors_xlsx(project_dir,tweet)
+                update_errors_xlsx(project_dir,tweet,file_number=file_number)
     else:
         soup = BeautifulSoup(data, "html.parser")
         tweet = parse_html(soup, file_name)
         update_xlsx(project_dir=project_dir,tweet=tweet)
         if update_errors :
-            update_errors_xlsx(project_dir,tweet)
+            update_errors_xlsx(project_dir,tweet,file_number=file_number)
         
     return True
 
-def process_errors_tweets(tweet_array,project_dir,output_dir):
+def process_errors_tweets(tweet_array,project_dir,output_dir,file_number):
     print(tweet_array)
     print("Project_dir: ",project_dir)
     print("Output_dir: ",output_dir)
@@ -438,7 +438,7 @@ def process_errors_tweets(tweet_array,project_dir,output_dir):
     original_url = tweet_array[0]
     timestamp = tweet_array[2]
     try:
-        with open(os.path.join(project_dir, f"{project_dir}_errors_fix_1.txt"), "r", encoding="utf-8") as f:
+        with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "r", encoding="utf-8") as f:
             error_tweets = f.read().splitlines()
     except FileNotFoundError:
         error_tweets = []
@@ -455,6 +455,8 @@ def process_errors_tweets(tweet_array,project_dir,output_dir):
                 content_type="application/json",
                 output_dir=output_dir,
                 user_name=project_dir,
+                update_errors=True,
+                file_number=file_number
             )
         else:
             download_with_wmd(
@@ -463,6 +465,8 @@ def process_errors_tweets(tweet_array,project_dir,output_dir):
                 project_dir=project_dir,
                 output_dir=output_dir,
                 user_name=project_dir,
+                update_errors=True,
+                file_number=file_number
             )
     except Exception as e:
         timestamp = tweet_array[3]
@@ -475,6 +479,8 @@ def process_errors_tweets(tweet_array,project_dir,output_dir):
                     content_type="application/json",
                     output_dir=output_dir,
                     user_name=project_dir,
+                    update_errors=True,
+                    file_number=file_number
                 )
             else:
                 download_with_wmd(
@@ -483,6 +489,8 @@ def process_errors_tweets(tweet_array,project_dir,output_dir):
                     project_dir=project_dir,
                     output_dir=output_dir,
                     user_name=project_dir,
+                    update_errors=True,
+                    file_number=file_number
                 )
         except:
             print(f"Error processing row: {e}")
@@ -496,7 +504,7 @@ def process_errors_tweets(tweet_array,project_dir,output_dir):
                 error_tweets.append(original_url)
                 error_tweets.append(error_message)
 
-                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_1.txt"), "w", encoding="utf-8") as f:
+                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "w", encoding="utf-8") as f:
                     f.write("\n".join(error_tweets))
 
 def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=True):

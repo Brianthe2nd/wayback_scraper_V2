@@ -109,6 +109,18 @@ def get_html_file_path(folder_name , link):
 
 def process_errors(error_path):
     date_errors = get_links_with_datetime_errors(error_path)
+    folder = error_path.split("\\")[-2]
+    file_number = 0
+    for file in os.listdir(folder):
+        if file.endswith(".txt") and "fix" in file:
+            try:
+                num = int(file.split(".txt")[0].split("_")[-1])
+                file_number = max(file_number, num + 1)
+            except ValueError:
+                pass  # skip files that don't end with a number
+
+            
+        
 
     for link in tqdm(date_errors, desc="Processing datetime errors", unit="tweet"):
         try:
@@ -128,7 +140,7 @@ def process_errors(error_path):
             tweet = parse_html(soup, html_file_path)
 
             update_xlsx(project_dir=folder_name, tweet=tweet)
-            update_errors_xlsx(project_dir=folder_name, tweet=tweet)
+            update_errors_xlsx(project_dir=folder_name, tweet=tweet,file_number=file_number)
             print("\n")
 
         except Exception as e:
@@ -144,7 +156,7 @@ def process_errors(error_path):
     for link in tqdm(other_errors, desc="Processing all errors", unit="tweet"):
         try:
             array, folder_name = get_tweet_array(link,error_path)
-            process_errors_tweets(array, folder_name, os.path.join(folder_name,folder_name+"_archive"))
+            process_errors_tweets(array, folder_name, os.path.join(folder_name,folder_name+"_archive"),file_number=file_number)
         except Exception as e:
             print(f"Error processing general error link {link}: {e}")
             traceback.print_exc()
