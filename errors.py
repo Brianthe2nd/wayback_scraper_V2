@@ -8,7 +8,7 @@ def find_error_tweets_files():
     
     for root, _, files in os.walk(cwd):
         for file in files:
-            if file.endswith("error_tweets.txt"):
+            if file.endswith("error_tweets.txt") or "errors_fix" in file:
                 matches.append(os.path.join(root, file))
     
     return matches

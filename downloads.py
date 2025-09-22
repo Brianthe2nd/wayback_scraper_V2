@@ -274,6 +274,81 @@ def update_xlsx(project_dir,tweet):
 
     print(f"Tweet added and '{excel_file_path}' updated successfully with formatting.")
 
+def download_file(url, timestamp, project_dir, output_dir, user_name):
+    # Temporary folder for downloader
+    first_download = True
+    tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
+
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)  # clean old runs
+    os.makedirs(tmp_dir, exist_ok=True)
+
+    # Run wayback_machine_downloader
+    cmd = [
+        "ruby",
+        "wayback_machine_downloader",
+        url,
+        "-e",
+        "-d",
+        f"../../{user_name}/{project_dir}_archive/tmp_dl",
+        "-f",
+        timestamp
+    ]
+    print(f"Running: {cmd}")
+    cwd = "wayback-machine-downloader/bin"
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            shell=True,             # needed since cmd is a string
+            check=True,
+            capture_output=True,    # capture stdout + stderr
+            text=True               # decode to str instead of bytes
+        )
+
+        # Check if the output contains "No files to download"
+        output = result.stdout + result.stderr
+        if "No files to download." in output:
+            print("⚠️ No files to download. The site may not be in Wayback Machine.")
+            print("Trying secondary download ...")
+            download_successful = secondary_download(
+                url=url,
+                timestamp=timestamp,
+                project_dir=project_dir,
+                output_dir=output_dir
+            )
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            if download_successful:
+                print("Secondary download completed successfully.")
+            else:
+                print("Secondary download failed")
+            return None
+        print("✅ Download completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Downloader failed for {url}: {e}")
+        if e.stdout:
+            print("STDOUT:", e.stdout)
+        if e.stderr:
+            print("STDERR:", e.stderr)
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return None
+
+    # Find the downloaded file (index.html or index.json)
+    path_parts = urlparse(url).path.split("/")
+
+    # Username is the part after "twitter.com/"
+    user_name = path_parts[1] if len(path_parts) > 1 else "unknown"
+
+    open_temp_dir = os.path.join(tmp_dir, user_name, "status")
+    files = os.listdir(open_temp_dir)
+    file = files[0]
+    index_file = os.listdir(f"{open_temp_dir}/{file}")[0]
+    index_path = os.path.join(open_temp_dir, file, index_file)
+
+    return index_path,open_temp_dir
+
+
 
 
 def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/html", output_dir="archive",update_errors=False,file_number="1"):
@@ -300,78 +375,8 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
         # return False
         first_download = False
     else:
-
-        # Temporary folder for downloader
         first_download = True
-        tmp_dir = os.path.abspath(os.path.join(output_dir, "tmp_dl"))
-        
-
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)  # clean old runs
-        os.makedirs(tmp_dir, exist_ok=True)
-
-        # Run wayback_machine_downloader
-        # safe_tmp_dir = Path(tmp_dir).as_posix()  # forward slashes, Ruby-friendly
-
-        cmd = [
-            "ruby",
-            "wayback_machine_downloader",
-            url,
-            "-e",
-            "-d",
-            f"../../{user_name}/{project_dir}_archive/tmp_dl",
-            "-f",
-            timestamp
-            
-        ]
-        print(f"Running: {cmd}")
-        cwd = "wayback-machine-downloader/bin"
-
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=cwd,
-                shell=True,             # needed since cmd is a string
-                check=True,
-                capture_output=True,    # capture stdout + stderr
-                text=True               # decode to str instead of bytes
-            )
-
-            # Check if the output contains "No files to download"
-            output = result.stdout + result.stderr
-            if "No files to download." in output:
-                print("⚠️ No files to download. The site may not be in Wayback Machine.")
-                print("Trying secondary download ...")
-                download_successful=secondary_download(url=url,timestamp=timestamp,project_dir=project_dir,output_dir=output_dir)
-                shutil.rmtree(tmp_dir, ignore_errors=True)
-                if download_successful:
-                    print("Secondary download completed successfully.")
-                else:
-                    print("Secondary download failed")
-                return
-            print("✅ Download completed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Downloader failed for {url}: {e}")
-            if e.stdout:
-                print("STDOUT:", e.stdout)
-            if e.stderr:
-                print("STDERR:", e.stderr)
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-        # Find the downloaded file (index.html or index.json)
-        path_parts = urlparse(url).path.split("/")
-
-        # Username is the part after "twitter.com/"
-        user_name = path_parts[1] if len(path_parts) > 1 else "unknown"
-
-        open_temp_dir = os.path.join(tmp_dir, user_name, "status")
-        open_temp_dir = os.path.join(tmp_dir,user_name,"status")
-        files = os.listdir(open_temp_dir)
-        file = files[0]
-        index_file = os.listdir(f"{open_temp_dir}/{file}")[0]
-        index_path = os.path.join(open_temp_dir,file,index_file)
-    
+        index_path,open_temp_dir = download_file(url=url,timestamp=timestamp,project_dir=project_dir,output_dir=output_dir,user_name=user_name)
     
     with open(index_path, encoding="utf-8") as f:
         data = f.read()
@@ -389,44 +394,72 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
         except OSError as e:
             print(f"Error deleting folder '{open_temp_dir}': {e}")
 
-    # Parse according to type
-    if content_type == "application/json":
-        # tweet = parse_tweet_json(json.loads(data), timestamp=timestamp)
-        if "<!DOCTYPE html>" in data:
-            link = f"https://web.archive.org/web/{timestamp}/{url}"
-            soup = BeautifulSoup(data, "html.parser")
-            pre_tag = soup.select_one("div#jsonview pre")
+    try:
+        # Parse according to type
+        if content_type == "application/json":
+            # tweet = parse_tweet_json(json.loads(data), timestamp=timestamp)
+            if "<!DOCTYPE html>" in data:
+                link = f"https://web.archive.org/web/{timestamp}/{url}"
+                soup = BeautifulSoup(data, "html.parser")
+                pre_tag = soup.select_one("div#jsonview pre")
 
-            if pre_tag:
-                text_content = pre_tag.get_text(strip=True)
-                # print(text_content)  # 👉 {"hello": "world"}
-                tweet_json = json.loads(text_content)
+                if pre_tag:
+                    text_content = pre_tag.get_text(strip=True)
+                    # print(text_content)  # 👉 {"hello": "world"}
+                    tweet_json = json.loads(text_content)
+                    tweet = parse_tweet_json(tweet_json, timestamp)
+                    print(tweet)
+                    update_xlsx(project_dir=project_dir,tweet=tweet)
+                    if update_errors :
+                        update_errors_xlsx(project_dir,tweet,file_number=file_number)
+                    
+                else:
+                    tweet = parse_html(soup, link, True)
+                    print(tweet)
+                    update_xlsx(project_dir=project_dir,tweet=tweet)
+                    if update_errors :
+                        update_errors_xlsx(project_dir,tweet,file_number=file_number)
+            else:
+                tweet_json = json.loads(data)
                 tweet = parse_tweet_json(tweet_json, timestamp)
                 print(tweet)
                 update_xlsx(project_dir=project_dir,tweet=tweet)
                 if update_errors :
                     update_errors_xlsx(project_dir,tweet,file_number=file_number)
-                
-            else:
-                tweet = parse_html(soup, link, True)
-                print(tweet)
-                update_xlsx(project_dir=project_dir,tweet=tweet)
-                if update_errors :
-                    update_errors_xlsx(project_dir,tweet,file_number=file_number)
         else:
-            tweet_json = json.loads(data)
-            tweet = parse_tweet_json(tweet_json, timestamp)
-            print(tweet)
+            soup = BeautifulSoup(data, "html.parser")
+            tweet = parse_html(soup, file_name)
             update_xlsx(project_dir=project_dir,tweet=tweet)
             if update_errors :
                 update_errors_xlsx(project_dir,tweet,file_number=file_number)
-    else:
-        soup = BeautifulSoup(data, "html.parser")
-        tweet = parse_html(soup, file_name)
-        update_xlsx(project_dir=project_dir,tweet=tweet)
-        if update_errors :
-            update_errors_xlsx(project_dir,tweet,file_number=file_number)
-        
+    except:
+        if first_download == False:
+            error = traceback.format_exc()
+            print("---pre-saved download failed---")
+            print(error)
+            os.remove(index_path)
+            download_with_wmd(url=url,timestamp=timestamp,project_dir=project_dir,user_name=user_name,content_type=content_type,output_dir=output_dir,update_errors=update_errors,file_number=file_number)  
+        else:
+            error = traceback.format_exc()
+            print("---post-saved download also failed---")
+            print(error)
+            # Append only if not already in log
+            try:
+                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "r", encoding="utf-8") as f:
+                    error_tweets = f.read().splitlines()
+            except FileNotFoundError:
+                error_tweets = []
+
+            # Use a set for faster lookups
+            error_urls = set(error_tweets)
+            if url not in error_urls:
+                error_urls.add(url)
+                error_tweets.append(url)
+                error_tweets.append(error)
+
+                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "w", encoding="utf-8") as f:
+                    f.write("\n".join(error_tweets))
+            
     return True
 
 def process_errors_tweets(tweet_array,project_dir,output_dir,file_number):

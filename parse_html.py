@@ -4,6 +4,7 @@ import pandas as pd
 import re
 import os
 import traceback
+from parse_mobile import parse_mobile_html
 
 
 # html = '''<link rel="canonical" href="https://web.archive.org/web/20200903151445/https://twitter.com/nekrovevo/status/1301536632558899207">'''
@@ -85,6 +86,11 @@ def parse_username(strong_tag):
 #permalink-overlay > div.PermalinkOverlay-modal > div.PermalinkOverlay-content > div > div > div.permalink.light-inline-actions.stream-uncapped.has-replies.original-permalink-page > div.permalink-inner.permalink-tweet-container.ThreadedConversation.ThreadedConversation--permalinkTweetWithAncestors > div > div.ReplyingToContextBelowAuthor > a > span > b
 
 def parse_html(soup,title,title_passed = False,retweet = False):
+    react_root = soup.select_one("div#react-root")
+    if react_root is not None:
+        tweet_obj = parse_mobile_html(soup)
+        return tweet_obj
+        
  
     main_container = soup.select_one('div[role="main"]')
     ancestor_container = main_container.select_one("div.permalink-in-reply-tos")
@@ -229,4 +235,6 @@ def main():
 
 if __name__  == "__main__":
     main()
+
+
 
