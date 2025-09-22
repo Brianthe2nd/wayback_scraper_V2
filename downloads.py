@@ -372,7 +372,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
     if os.path.exists(final_file):
         print(f"Skipping (already saved): {final_file}")
         index_path = final_file
-        # return False
+        return False
         first_download = False
     else:
         first_download = True
