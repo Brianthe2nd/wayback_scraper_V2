@@ -2,14 +2,26 @@ import os
 from process_errors import process_errors
 
 def find_error_tweets_files():
-    """Walk through all folders in the CWD and return paths to files ending with 'error_tweets.txt'."""
-    matches = []
-    cwd = os.getcwd()
     
+    """Walk through all folders in the CWD and return paths to files ending with 'error_tweets.txt'."""
+    
+
     for root, _, files in os.walk(cwd):
         for file in files:
-            if file.endswith("error_tweets.txt") or "errors_fix" in file:
+            if "errors_fix" in file:
+                old_path = os.path.join(root, file)
+                new_path = os.path.join(root, file.replace("fix", "remaining"))
+                os.rename(old_path, new_path)
+
+    matches = []
+    cwd = os.getcwd()
+    for root, _, files in os.walk(cwd):
+        for file in files:
+            if "errors_fix" in file:
+                os.rename(file,file.replace("fix","remaining"))
+            if file.endswith("error_tweets.txt") or "errors_remaining" in file:
                 matches.append(os.path.join(root, file))
+                
     
     return matches
 

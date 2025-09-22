@@ -445,7 +445,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
             print(error)
             # Append only if not already in log
             try:
-                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "r", encoding="utf-8") as f:
+                with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "r", encoding="utf-8") as f:
                     error_tweets = f.read().splitlines()
             except FileNotFoundError:
                 error_tweets = []
@@ -457,7 +457,7 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
                 error_tweets.append(url)
                 error_tweets.append(error)
 
-                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "w", encoding="utf-8") as f:
+                with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "w", encoding="utf-8") as f:
                     f.write("\n".join(error_tweets))
             
     return True
@@ -471,7 +471,7 @@ def process_errors_tweets(tweet_array,project_dir,output_dir,file_number):
     original_url = tweet_array[0]
     timestamp = tweet_array[2]
     try:
-        with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "r", encoding="utf-8") as f:
+        with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "r", encoding="utf-8") as f:
             error_tweets = f.read().splitlines()
     except FileNotFoundError:
         error_tweets = []
@@ -537,7 +537,7 @@ def process_errors_tweets(tweet_array,project_dir,output_dir,file_number):
                 error_tweets.append(original_url)
                 error_tweets.append(error_message)
 
-                with open(os.path.join(project_dir, f"{project_dir}_errors_fix_{file_number}.txt"), "w", encoding="utf-8") as f:
+                with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "w", encoding="utf-8") as f:
                     f.write("\n".join(error_tweets))
 
 def process_json_file(json_path, project_dir, output_dir="archive", show_tqdm=True):
