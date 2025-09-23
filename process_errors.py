@@ -112,7 +112,7 @@ def process_errors(error_path):
     folder = error_path.split("\\")[-2]
     file_number = 0
     for file in os.listdir(folder):
-        if file.endswith(".txt") and "fix" in file:
+        if file.endswith(".txt") and "remaining" in file:
             try:
                 num = int(file.split(".txt")[0].split("_")[-1])
                 file_number = max(file_number, num + 1)

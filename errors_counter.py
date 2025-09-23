@@ -1,6 +1,5 @@
 
 import os 
-from process_errors import process_errors
 
 def find_error_tweets_files():
     
