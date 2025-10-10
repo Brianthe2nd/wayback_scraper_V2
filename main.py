@@ -6,6 +6,10 @@ from datetime import datetime
 import sys, os, json, traceback
 from contextlib import redirect_stdout, redirect_stderr
 
+import warnings
+warnings.filterwarnings("ignore")
+
+
 class Tee:
     def __init__(self, *files):
         self.files = files

@@ -1,6 +1,9 @@
 import os 
 from process_errors import process_errors
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def find_error_tweets_files():
     
     """Walk through all folders in the CWD and return paths to files ending with 'error_tweets.txt'."""
