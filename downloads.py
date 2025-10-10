@@ -445,22 +445,39 @@ def download_with_wmd(url, timestamp,project_dir,user_name, content_type="text/h
             print("---post-saved download also failed---")
             print(error)
             # Append only if not already in log
-            try:
-                with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "r", encoding="utf-8") as f:
-                    error_tweets = f.read().splitlines()
-            except FileNotFoundError:
-                error_tweets = []
+            if update_errors:
+                try:
+                    with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "r", encoding="utf-8") as f:
+                        error_tweets = f.read().splitlines()
+                except FileNotFoundError:
+                    error_tweets = []
 
             # Use a set for faster lookups
-            error_urls = set(error_tweets)
-            if url not in error_urls:
-                error_urls.add(url)
-                error_tweets.append(url)
-                error_tweets.append(error)
+                error_urls = set(error_tweets)
+                if url not in error_urls:
+                    error_urls.add(url)
+                    error_tweets.append(url)
+                    error_tweets.append(error)
 
-                with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "w", encoding="utf-8") as f:
-                    f.write("\n".join(error_tweets))
+                    with open(os.path.join(project_dir, f"{project_dir}_errors_remaining_{file_number}.txt"), "w", encoding="utf-8") as f:
+                        f.write("\n".join(error_tweets))
+                
             
+            else:
+                print(f"Error processing row: {e}")
+                # traceback.print_exc()
+                error_message = traceback.format_exc()
+                print(error_message)
+
+                # Append only if not already in log
+                if url not in error_urls:
+                    error_urls.add(url)
+                    error_tweets.append(url)
+                    error_tweets.append(error_message)
+
+                    with open(os.path.join(project_dir, f"{project_dir}_error_tweets.txt"), "w", encoding="utf-8") as f:
+                        f.write("\n".join(error_tweets))
+                
     return True
 
 def process_errors_tweets(tweet_array,project_dir,output_dir,file_number):
